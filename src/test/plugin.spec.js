@@ -5,6 +5,7 @@ var assert = require('assert');
 var vinyl = require('vinyl-fs');
 var files = require('fs');
 var gutil = require('gulp-util');
+var eol = require('eol');
 
 var precompiler = require('../..');
 
@@ -27,10 +28,16 @@ describe('The gulp-less-precompiler', function() {
 				.once('data', function(file) {
 					gutil.log('File received: ' + file.path);
 					expected.then(function(result) {
-						assert.equal(file.contents.toString('utf8'), result.toString());
+
+						var left = eol.auto(file.contents.toString('utf8'));
+						var right = eol.auto(result.toString('utf8'));
+						assert.equal(left, right);
+
 						done();
+
 					}).catch(function(error) {
 						done(error);
+
 					})
 				})
 
