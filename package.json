@@ -1,0 +1,22 @@
+{
+  "name": "gulp-less-precompiler",
+  "version": "1.0.0",
+  "description": "A gulp plugin that replaces imports with the imported file content.",
+  "main": "index.js",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/aetheric/gulp-less-precompiler.git"
+  },
+  "keywords": [
+    "gulpplugin"
+  ],
+  "author": "Peter Cummuskey <peterc@aetheric.co.nz>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/aetheric/gulp-less-precompiler/issues"
+  },
+  "homepage": "https://github.com/aetheric/gulp-less-precompiler#readme"
+}

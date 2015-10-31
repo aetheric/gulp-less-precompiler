@@ -1,0 +1,16 @@
+language: node_js
+node_js:
+    - '4.1'
+
+before_install:
+    - npm install -g npm@latest
+
+deploy:
+    provider: npm
+    email: peterc@aetheric.co.nz
+    skip_cleanup: true
+    api_key:
+        secure:
+        on:
+            tags: true
+

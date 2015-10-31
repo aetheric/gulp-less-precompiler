@@ -1,0 +1,6 @@
+= gulp-less-precompiler
+
+A gulp plugin that replaces less imports with the content of the file that is
+being imported. Allows for the use of a single .less file if runtime
+compilation of less styles is necessary for some reason.
+
