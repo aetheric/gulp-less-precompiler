@@ -1,10 +1,10 @@
 language: node_js
 
 node_js:
-- '14.1'
+	- '14.1'
 
 before_install:
-- npm install -g npm@latest
+	- npm install -g npm@latest
 
 deploy:
 	provider: npm
@@ -14,4 +14,3 @@ deploy:
 	on:
 		repo: aetheric/gulp-less-precompiler
 		tags: true
-
