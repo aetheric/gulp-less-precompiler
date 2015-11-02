@@ -8,6 +8,7 @@ var files = require('fs');
 var paths = require('path');
 var StringBuilder = require('stringbuilder');
 var File = require('vinyl');
+var sourcemaps = require('vinyl-sourcemaps-apply');
 
 var REGEX_IMPORT = new RegExp('@import [\'"](.+?)[\'"];');
 
@@ -16,9 +17,10 @@ var REGEX_IMPORT = new RegExp('@import [\'"](.+?)[\'"];');
  * @param {File} file
  * @param {Promise<Buffer>} promise
  * @param {Object} context
+ * @param {Boolean} debug Whether to display debug messages during work.
  * @returns {Promise<Buffer>}
  */
-function scanFile(file, promise, context) {
+function scanFile(file, promise, context, debug) {
 	return new Promise(function(resolve, reject) {
 
 		var target = file.path;
@@ -61,7 +63,7 @@ function scanFile(file, promise, context) {
 					base: file.base
 				});
 
-				return scanFile(targetFile, promise, context);
+				return scanFile(targetFile, promise, context, debug);
 
 			});
 		});
@@ -80,6 +82,7 @@ function scanFile(file, promise, context) {
 
 /**
  * @param {File} file
+ * @param {Boolean} debug Whether to display debug messages during work.
  * @returns {Promise<Buffer>}
  **/
 function startScan(file, debug) {
@@ -94,13 +97,28 @@ function startScan(file, debug) {
  */
 module.exports = function lessPrecompiler(options) {
 
+	var config = {
+
+		debug: options
+			&& options.debug,
+
+		sourceMaps: options
+			? options.sourceMaps !== false
+			: true,
+
+		push: options
+			&& options.push
+
+	};
+
 	return through2.obj(function(file, encoding, done) {
+		var self = this;
 
 		if (file.isNull()) {
 			done(null, file);
 		}
 
-		startScan(file, options.debug).then(function(builder) {
+		startScan(file, config.debug).then(function(builder) {
 
 			if (file.isBuffer()) {
 				return builder.build(function(error, result) {
@@ -110,6 +128,15 @@ module.exports = function lessPrecompiler(options) {
 					}
 
 					file.contents = new Buffer(result);
+
+					if (config.sourceMaps && file.sourceMap) {
+						sourcemaps(file, result.map);
+					}
+
+					if (config.push) {
+						self.push(file);
+					}
+
 					done(null, file);
 
 				});
@@ -117,8 +144,26 @@ module.exports = function lessPrecompiler(options) {
 			}
 
 			if (file.isStream()) {
+
 				file.contents = new Stream();
-				return builder.writeStream(file.contents, done);
+
+				return builder.writeStream(file.contents, function(error, result) {
+
+					if (error) {
+						return done(error);
+					}
+
+					if (config.sourceMaps && file.sourceMap) {
+						sourcemaps(file, result.map);
+					}
+
+					if (config.push) {
+						self.push(file);
+					}
+
+					done(null, file);
+
+				});
 
 			}
 
