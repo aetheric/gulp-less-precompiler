@@ -43,8 +43,13 @@ function scanFile(file, promise, context) {
 
 				var matches = REGEX_IMPORT.exec(line);
 				if (!matches) {
-					gutil.log('=> ' + line);
+
+					if (debug) {
+						gutil.log('=> ' + line);
+					}
+
 					return builder.appendLine(line);
+
 				}
 
 				var fileDir = paths.dirname(file.path);
@@ -77,14 +82,15 @@ function scanFile(file, promise, context) {
  * @param {File} file
  * @returns {Promise<Buffer>}
  **/
-function startScan(file) {
+function startScan(file, debug) {
 	gutil.log('Starting style precompilation with ' + file.path);
-	return scanFile(file, Promise.resolve(new StringBuilder()), []);
+	return scanFile(file, Promise.resolve(new StringBuilder()), [], debug);
 }
 
 /**
  * Creates a new precompiler for use in a gulp workflow.
- * @param {Object} [options] Never actually used.
+ * @param {Object} [options] The plugin options.
+ * @param {Boolean} [options.debug] Whether to log debug messages.
  */
 module.exports = function lessPrecompiler(options) {
 
@@ -94,7 +100,7 @@ module.exports = function lessPrecompiler(options) {
 			done(null, file);
 		}
 
-		startScan(file).then(function(builder) {
+		startScan(file, options.debug).then(function(builder) {
 
 			if (file.isBuffer()) {
 				return builder.build(function(error, result) {
