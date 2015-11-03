@@ -9,7 +9,7 @@ var paths = require('path');
 var StringBuilder = require('stringbuilder');
 var File = require('vinyl');
 var sourcemaps = require('vinyl-sourcemaps-apply');
-var streamifier = require('streamifier');
+var from = require('new-from');
 
 var REGEX_IMPORT = new RegExp('@import [\'"](.+?)[\'"];');
 
@@ -55,8 +55,13 @@ function scanFile(file, promise, context, debug) {
 
 				}
 
+				var filename = matches[1];
+				if (!paths.extname(filename)) {
+					filename += '.less';
+				}
+
 				var fileDir = paths.dirname(file.path);
-				var targetPath = paths.resolve(fileDir, matches[1]);
+				var targetPath = paths.resolve(fileDir, filename);
 				var targetFile = new File({
 					path: targetPath,
 					history: [ targetPath ],
@@ -126,9 +131,9 @@ module.exports = function lessPrecompiler(options) {
 					return done(error);
 				}
 
-				file.contents = file.isStream()
-					? streamifier.createReadStream(result)
-					: new Buffer(result);
+				file.contents = file.isBuffer()
+					? new Buffer(result)
+					: from([ result ]);
 
 				if (config.sourceMaps && file.sourceMap) {
 					sourcemaps(file, result.map);
