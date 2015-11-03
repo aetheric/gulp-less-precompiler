@@ -117,12 +117,33 @@ module.exports = function lessPrecompiler(options) {
 
 	};
 
-	return through2.obj(function(file, encoding, done) {
+	var finished = false;
+	var pending = 0;
+	var stream;
+
+	function tryClose() {
+
+		if (!finished || pending > 0) {
+			return;
+		}
+
+		process.nextTick(function() {
+			stream.emit('end');
+			process.nextTick(function() {
+				stream.emit('close');
+			});
+		});
+
+	}
+
+	function write(file, encoding, done) {
 		var self = this;
 
-		if (file.isNull() || !file.isBuffer() || !file.isStream()) {
+		if (file.isNull() || !file.isBuffer() || !file.isStream() || !file.path.match(/\.less$/)) {
 			done(null, file);
 		}
+
+		pending++;
 
 		startScan(file, config.debug).then(function(builder) {
 			return builder.build(function(error, result) {
@@ -130,6 +151,8 @@ module.exports = function lessPrecompiler(options) {
 				if (error) {
 					return done(error);
 				}
+
+				file.clone();
 
 				file.contents = file.isBuffer()
 					? new Buffer(result)
@@ -139,11 +162,8 @@ module.exports = function lessPrecompiler(options) {
 					sourcemaps(file, result.map);
 				}
 
-				if (config.push) {
-					self.push(file);
-				}
-
-				done(null, file);
+				self.push(file, done);
+				tryClose(--pending);
 
 			});
 		}).catch(function(error) {
@@ -151,5 +171,12 @@ module.exports = function lessPrecompiler(options) {
 			done(error);
 		});
 
-	})
+	}
+
+	stream = through2.obj(write, function() {
+		tryClose(finished = true);
+	});
+
+	return stream;
+
 };
