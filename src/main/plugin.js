@@ -9,6 +9,7 @@ var paths = require('path');
 var StringBuilder = require('stringbuilder');
 var File = require('vinyl');
 var sourcemaps = require('vinyl-sourcemaps-apply');
+var streamifier = require('streamifier');
 
 var REGEX_IMPORT = new RegExp('@import [\'"](.+?)[\'"];');
 
@@ -114,61 +115,32 @@ module.exports = function lessPrecompiler(options) {
 	return through2.obj(function(file, encoding, done) {
 		var self = this;
 
-		if (file.isNull()) {
+		if (file.isNull() || !file.isBuffer() || !file.isStream()) {
 			done(null, file);
 		}
 
 		startScan(file, config.debug).then(function(builder) {
+			return builder.build(function(error, result) {
 
-			if (file.isBuffer()) {
-				return builder.build(function(error, result) {
+				if (error) {
+					return done(error);
+				}
 
-					if (error) {
-						return done(error);
-					}
+				file.contents = file.isStream()
+					? streamifier.createReadStream(result)
+					: new Buffer(result);
 
-					file.contents = new Buffer(result);
+				if (config.sourceMaps && file.sourceMap) {
+					sourcemaps(file, result.map);
+				}
 
-					if (config.sourceMaps && file.sourceMap) {
-						sourcemaps(file, result.map);
-					}
+				if (config.push) {
+					self.push(file);
+				}
 
-					if (config.push) {
-						self.push(file);
-					}
+				done(null, file);
 
-					done(null, file);
-
-				});
-
-			}
-
-			if (file.isStream()) {
-
-				file.contents = new Stream();
-
-				return builder.writeStream(file.contents, function(error, result) {
-
-					if (error) {
-						return done(error);
-					}
-
-					if (config.sourceMaps && file.sourceMap) {
-						sourcemaps(file, result.map);
-					}
-
-					if (config.push) {
-						self.push(file);
-					}
-
-					done(null, file);
-
-				});
-
-			}
-
-			return null;
-
+			});
 		}).catch(function(error) {
 			gutil.log('Scan failed: ' + error.stack);
 			done(error);
