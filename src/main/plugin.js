@@ -1,4 +1,4 @@
-/* global require */
+/* global require, process, Buffer */
 'use strict';
 
 var through2 = require('through2');
@@ -154,16 +154,24 @@ module.exports = function lessPrecompiler(options) {
 
 				file.clone();
 
-				file.contents = file.isBuffer()
-					? new Buffer(result)
-					: from([ result ]);
+				files.truncate(file.path, 0, (error) => {
 
-				if (config.sourceMaps && file.sourceMap) {
-					sourcemaps(file, result.map);
-				}
+					if (error) {
+						return done(error);
+					}
 
-				self.push(file, done);
-				tryClose(--pending);
+					file.content = file.isBuffer()
+							? new Buffer(result)
+							: from([ result ]);
+
+					if (config.sourceMaps && file.sourceMap) {
+						sourcemaps(file, result.map);
+					}
+
+					self.push(file, done);
+					tryClose(--pending);
+
+				});
 
 			});
 		}).catch(function(error) {
