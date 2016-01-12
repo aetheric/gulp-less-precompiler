@@ -154,7 +154,7 @@ module.exports = function lessPrecompiler(options) {
 
 				file.clone();
 
-				files.truncate(file.path, 0, (error) => {
+				files.truncate(file.path, 0, function(error) {
 
 					if (error) {
 						return done(error);
