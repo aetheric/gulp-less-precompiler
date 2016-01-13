@@ -38,7 +38,8 @@ function scanFile(file, promise, context, debug) {
 		var lastPromise = promise;
 
 		var lineStream = readline.createInterface({
-			input: files.createReadStream(target)
+			input: files.createReadStream(target),
+			terminal: false
 		});
 
 		lineStream.on('line', function(line) {
