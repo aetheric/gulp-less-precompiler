@@ -6,22 +6,19 @@
   "scripts": {
     "test": "gulp test"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/aetheric/gulp-less-precompiler.git"
-  },
+  "repository": "aetheric/gulp-less-precompiler",
   "keywords": [
     "gulpplugin"
   ],
   "author": "Peter Cummuskey <peterc@aetheric.co.nz>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/aetheric/gulp-less-precompiler/issues"
-  },
+  "bugs": "https://github.com/aetheric/gulp-less-precompiler/issues",
   "homepage": "https://github.com/aetheric/gulp-less-precompiler#readme",
+  "engines": {
+	"node": ">=0.1.98"
+  },
   "dependencies": {
     "new-from": "0.0.3",
-    "readline": "^1.1.0",
     "stringbuilder": "0.0.11",
     "through2": "^2.0.0",
     "vinyl": "^1.1.0",
