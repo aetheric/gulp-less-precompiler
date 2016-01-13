@@ -21,7 +21,6 @@
   "homepage": "https://github.com/aetheric/gulp-less-precompiler#readme",
   "dependencies": {
     "new-from": "0.0.3",
-    "readline": "^1.1.0",
     "stringbuilder": "0.0.11",
     "through2": "^2.0.0",
     "vinyl": "^1.1.0",
