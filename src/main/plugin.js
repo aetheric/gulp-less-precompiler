@@ -9,7 +9,7 @@ var paths = require('path');
 var StringBuilder = require('stringbuilder');
 var Promise = require('promise');
 
-var REGEX_IMPORT = new RegExp('@import [\'"](.+?)[\'"];');
+var REGEX_IMPORT = new RegExp('^@import [\'"](.+?)[\'"];');
 
 /**
  *
