@@ -9,8 +9,6 @@ var paths = require('path');
 var StringBuilder = require('stringbuilder');
 var Promise = require('promise');
 
-var REGEX_IMPORT = new RegExp('^@import [\'"](.+?)[\'"];');
-
 /**
  *
  * @param {File} filepath The path to the file being scanned.
@@ -25,7 +23,7 @@ function scanFile(filepath, promise, context, debug) {
 		// Make sure the file hasn't already been processed
 		if (context[filepath]) {
 			gutil.log('===> ' + filepath + ' already processed.');
-			promise.then(resolve, reject);
+			return promise.then(resolve, reject);
 		}
 
 		gutil.log('===> Processing ' + filepath);
@@ -44,7 +42,7 @@ function scanFile(filepath, promise, context, debug) {
 		lineStream.on('line', function(line) {
 			lastPromise = lastPromise.then(function(builder) {
 
-				var matches = REGEX_IMPORT.exec(line);
+				var matches = /^@import [\'"](.+?)[\'"];/.exec(line);
 				if (!matches) {
 
 					if (debug) {
@@ -55,14 +53,16 @@ function scanFile(filepath, promise, context, debug) {
 
 				}
 
-				var filename = matches[1];
-				if (!paths.extname(filename)) {
-					filename += '.less';
+				var importpath = matches[1];
+				if (!paths.extname(importpath)) {
+					importpath += '.less';
 				}
 
-				var fileDir = paths.dirname(filepath);
-				var targetPath = paths.resolve(fileDir, filename);
+				var fileDir = /^[\/\\]/.test(importpath)
+						? process.cwd()
+						: paths.dirname(filepath);
 
+				var targetPath = paths.resolve(fileDir, './' + importpath);
 				return scanFile(targetPath, promise, context, debug);
 
 			});
@@ -87,7 +87,7 @@ function scanFile(filepath, promise, context, debug) {
  **/
 function startScan(filepath, debug) {
 	gutil.log('Starting style precompilation with ' + filepath);
-	return scanFile(filepath, Promise.resolve(new StringBuilder()), [], debug);
+	return scanFile(filepath, Promise.resolve(new StringBuilder()), {}, debug);
 }
 
 /**
@@ -100,10 +100,7 @@ module.exports = function lessPrecompiler(options) {
 	var config = {
 
 		debug: options
-			&& options.debug,
-
-		push: options
-			&& options.push
+			&& options.debug
 
 	};
 
