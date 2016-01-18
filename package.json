@@ -15,14 +15,12 @@
   "bugs": "https://github.com/aetheric/gulp-less-precompiler/issues",
   "homepage": "https://github.com/aetheric/gulp-less-precompiler#readme",
   "engines": {
-	"node": ">=0.1.98"
+    "node": ">=0.1.98"
   },
   "dependencies": {
-    "new-from": "0.0.3",
+    "promise": "^7.1.1",
     "stringbuilder": "0.0.11",
-    "through2": "^2.0.0",
-    "vinyl": "^1.1.0",
-    "vinyl-sourcemaps-apply": "^0.2.0"
+    "vinyl-map2": "^1.2.1"
   },
   "devDependencies": {
     "assert": "^1.3.0",
@@ -30,6 +28,6 @@
     "gulp": "^3.9.0",
     "gulp-mocha": "^2.1.3",
     "gulp-util": "^3.0.7",
-    "vinyl-fs": "^2.2.1"
+    "vinyl-fs": "^2.3.1"
   }
 }
