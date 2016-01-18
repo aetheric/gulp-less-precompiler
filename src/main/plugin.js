@@ -1,44 +1,40 @@
 /* global require, process, Buffer */
 'use strict';
 
-var through2 = require('through2');
+var map = require('vinyl-map2');
 var gutil = require('gulp-util');
 var readline = require('readline');
 var files = require('fs');
 var paths = require('path');
 var StringBuilder = require('stringbuilder');
-var File = require('vinyl');
-var sourcemaps = require('vinyl-sourcemaps-apply');
-var from = require('new-from');
+var Promise = require('promise');
 
 var REGEX_IMPORT = new RegExp('@import [\'"](.+?)[\'"];');
 
 /**
  *
- * @param {File} file
- * @param {Promise<Buffer>} promise
+ * @param {File} filepath The path to the file being scanned.
+ * @param {Promise<Buffer>} promise A promise resolving to the buffer output.
  * @param {Object} context
  * @param {Boolean} debug Whether to display debug messages during work.
  * @returns {Promise<Buffer>}
  */
-function scanFile(file, promise, context, debug) {
+function scanFile(filepath, promise, context, debug) {
 	return new Promise(function(resolve, reject) {
 
-		var target = file.path;
-
 		// Make sure the file hasn't already been processed
-		if (context[target]) {
+		if (context[filepath]) {
 			promise.then(resolve, reject);
 		}
 
 		// Add target file to the context to avoid repeats.
-		context[target] = file;
+		context[filepath] = true;
 
 		// Start the promise chain.
 		var lastPromise = promise;
 
 		var lineStream = readline.createInterface({
-			input: files.createReadStream(target),
+			input: files.createReadStream(filepath),
 			terminal: false
 		});
 
@@ -61,16 +57,10 @@ function scanFile(file, promise, context, debug) {
 					filename += '.less';
 				}
 
-				var fileDir = paths.dirname(file.path);
+				var fileDir = paths.dirname(filepath);
 				var targetPath = paths.resolve(fileDir, filename);
-				var targetFile = new File({
-					path: targetPath,
-					history: [ targetPath ],
-					cwd: file.cwd,
-					base: file.base
-				});
 
-				return scanFile(targetFile, promise, context, debug);
+				return scanFile(targetPath, promise, context, debug);
 
 			});
 		});
@@ -88,13 +78,13 @@ function scanFile(file, promise, context, debug) {
 }
 
 /**
- * @param {File} file
+ * @param {File} filepath The path to the file being scanned.
  * @param {Boolean} debug Whether to display debug messages during work.
  * @returns {Promise<Buffer>}
  **/
-function startScan(file, debug) {
-	gutil.log('Starting style precompilation with ' + file.path);
-	return scanFile(file, Promise.resolve(new StringBuilder()), [], debug);
+function startScan(filepath, debug) {
+	gutil.log('Starting style precompilation with ' + filepath);
+	return scanFile(filepath, Promise.resolve(new StringBuilder()), [], debug);
 }
 
 /**
@@ -109,70 +99,25 @@ module.exports = function lessPrecompiler(options) {
 		debug: options
 			&& options.debug,
 
-		sourceMaps: options
-			? options.sourceMaps !== false
-			: true,
-
 		push: options
 			&& options.push
 
 	};
 
-	var finished = false;
-	var pending = 0;
-	var stream;
+	return map(function (content, filepath, done) {
 
-	function tryClose() {
-
-		if (!finished || pending > 0) {
-			return;
+		if (!content || !filepath || !filepath.match(/\.(?:le|c)ss$/)) {
+			done(null, content);
 		}
 
-		process.nextTick(function() {
-			stream.emit('end');
-			process.nextTick(function() {
-				stream.emit('close');
-			});
-		});
-
-	}
-
-	function write(file, encoding, done) {
-		var self = this;
-
-		if (file.isNull() || !file.isBuffer() || !file.isStream() || !file.path.match(/\.less$/)) {
-			done(null, file);
-		}
-
-		pending++;
-
-		startScan(file, config.debug).then(function(builder) {
+		startScan(filepath, config.debug).then(function(builder) {
 			return builder.build(function(error, result) {
 
 				if (error) {
 					return done(error);
 				}
 
-				file.clone();
-
-				files.truncate(file.path, 0, function(error) {
-
-					if (error) {
-						return done(error);
-					}
-
-					file.content = file.isBuffer()
-							? new Buffer(result)
-							: from([ result ]);
-
-					if (config.sourceMaps && file.sourceMap) {
-						sourcemaps(file, result.map);
-					}
-
-					self.push(file, done);
-					tryClose(--pending);
-
-				});
+				done(null, result.toString());
 
 			});
 		}).catch(function(error) {
@@ -180,12 +125,6 @@ module.exports = function lessPrecompiler(options) {
 			done(error);
 		});
 
-	}
-
-	stream = through2.obj(write, function() {
-		tryClose(finished = true);
 	});
-
-	return stream;
 
 };

@@ -11,7 +11,7 @@ var precompiler = require('../..');
 
 describe('The gulp-less-precompiler', function() {
 
-	describe('when reading vinyl files', function() {
+	describe('when reading files', function() {
 
 		var expected = new Promise(function(resolve, reject) {
 			files.readFile('src/test/files/expected.less', function(error, result) {
