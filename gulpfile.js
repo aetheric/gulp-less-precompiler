@@ -5,21 +5,18 @@ var gulp = require('gulp');
 var mocha = require('gulp-mocha');
 var utils = require('gulp-util');
 
-gulp.task('test', function() {
+gulp.task('test', function(done) {
 
-	module.exports = function(done) {
-		gulp.src('src/test/**/*.spec.*')
+	gulp.src('src/test/**/*.spec.*')
 
-			.pipe(mocha({
-				ui: 'bdd',
-				reporter: 'spec',
-				bail: false
-			}))
+		.pipe(mocha({
+			ui: 'bdd',
+			reporter: 'spec',
+			bail: false
+		}))
 
-			.on('error', utils.log)
-			.once('end', done);
-
-	};
+		.on('error', utils.log)
+		.once('end', done);
 
 });
 
