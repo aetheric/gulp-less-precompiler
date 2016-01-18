@@ -24,8 +24,11 @@ function scanFile(filepath, promise, context, debug) {
 
 		// Make sure the file hasn't already been processed
 		if (context[filepath]) {
+			gutil.log('===> ' + filepath + ' already processed.');
 			promise.then(resolve, reject);
 		}
+
+		gutil.log('===> Processing ' + filepath);
 
 		// Add target file to the context to avoid repeats.
 		context[filepath] = true;
