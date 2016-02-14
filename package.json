@@ -1,6 +1,6 @@
 {
   "name": "gulp-less-precompiler",
-  "version": "1.2.0",
+  "version": "1.2.1-snapshot",
   "description": "A gulp plugin that replaces imports with the imported file content.",
   "main": "index.js",
   "scripts": {
