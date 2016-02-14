@@ -8,6 +8,8 @@ var paths = require('path');
 var StringBuilder = require('stringbuilder');
 var Promise = require('promise');
 
+var streamer = require('./streamer');
+
 /**
  *
  * @param {File} filepath The path to the file being scanned.
@@ -37,55 +39,54 @@ function scanFile(filepath, promise, context, debug, counter) {
 		// Start the promise chain.
 		var lastPromise = promise;
 
-		var lineStream = readline.createInterface({
-			input: files.createReadStream(filepath),
-			terminal: false
-		});
+		streamer(filepath, {
 
-		lineStream.on('line', function(line) {
-			lastPromise = lastPromise.then(function(builder) {
-				counter && counter[counter.length - 1]++;
+			line: function(line) {
+				lastPromise = lastPromise.then(function(builder) {
+					counter && counter[counter.length - 1]++;
 
-				var matches = /^@import (?:\(inline\) )?[\'"](.+?)[\'"];/.exec(line);
-				if (!matches) {
+					var matches = /^@import (?:\(inline\) )?[\'"](.+?)[\'"];/.exec(line);
+					if (!matches) {
 
-					if (debug) {
-						gutil.log('=> ' + line);
+						if (debug) {
+							gutil.log('=> ' + line);
+						}
+
+						return builder.appendLine(line + ( counter
+										? " // " + counter.join(" / ")
+										: "" ));
+
 					}
 
-					return builder.appendLine(line + ( counter
-									? " // " + counter.join(" / ")
-									: "" ));
+					var importpath = matches[1];
+					if (!paths.extname(importpath)) {
+						importpath += '.less';
+					}
 
-				}
+					var fileDir = /^[\/\\]/.test(importpath)
+							? process.cwd()
+							: paths.dirname(filepath);
 
-				var importpath = matches[1];
-				if (!paths.extname(importpath)) {
-					importpath += '.less';
-				}
+					var targetPath = paths.resolve(fileDir, './' + importpath);
+					return scanFile(targetPath, promise, context, debug, counter);
 
-				var fileDir = /^[\/\\]/.test(importpath)
-						? process.cwd()
-						: paths.dirname(filepath);
+				});
+			},
 
-				var targetPath = paths.resolve(fileDir, './' + importpath);
-				return scanFile(targetPath, promise, context, debug, counter);
+			error: function(error) {
+				gutil.log('Stream error');
+				reject(error);
+			},
 
-			});
-		});
+			close: function() {
+				lastPromise.then(function(builder) {
+					counter && counter.pop();
+					resolve(builder);
 
-		lineStream.on('error', function(error) {
-			gutil.log('Stream error');
-			reject(error);
-		});
+				}).catch(reject);
+			}
 
-		lineStream.on('close', function() {
-			lastPromise.then(function(builder) {
-				counter && counter.pop();
-				resolve(builder);
-
-			}).catch(reject);
-		});
+		})
 
 	});
 }
