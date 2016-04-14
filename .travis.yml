@@ -27,9 +27,7 @@ before_script:
   - cat package.json | grep version
 
 script:
-  - gulp build
   - gulp test
-  - gulp docs
 
 before_deploy:
   - rm -rf src/test
