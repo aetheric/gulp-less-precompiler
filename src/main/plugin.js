@@ -42,7 +42,7 @@ function scanFile(filepath, promise, context, debug) {
 		lineStream.on('line', function(line) {
 			lastPromise = lastPromise.then(function(builder) {
 
-				var matches = /^@import [\'"](.+?)[\'"];/.exec(line);
+				var matches = /^@import (?:\(inline\) )?[\'"](.+?)[\'"];/.exec(line);
 				if (!matches) {
 
 					if (debug) {
