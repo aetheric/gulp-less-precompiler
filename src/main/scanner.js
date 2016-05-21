@@ -2,7 +2,6 @@
 'use strict';
 
 var gutil = require('gulp-util');
-var files = require('fs');
 var readline = require('readline');
 var paths = require('path');
 var StringBuilder = require('stringbuilder');
@@ -12,34 +11,34 @@ var streamer = require('./streamer');
 
 /**
  *
- * @param {File} filepath The path to the file being scanned.
+ * @param {String} filePath The path to the file being scanned.
  * @param {Promise<Buffer>} promise A promise resolving to the buffer output.
  * @param {Object} context
  * @param {Boolean} debug Whether to display debug messages during work.
  * @param {Array} [counter] Contains the current path counter.
  * @returns {Promise<Buffer>}
  */
-function scanFile(filepath, promise, context, debug, counter) {
+function scanFile(filePath, promise, context, debug, counter) {
 	return new Promise(function(resolve, reject) {
 
 		counter && counter.push(0);
 
 		// Make sure the file hasn't already been processed
-		if (context[filepath]) {
-			gutil.log('===> ' + filepath + ' already processed.');
+		if (context[filePath]) {
+			gutil.log('===> ' + filePath + ' already processed.');
 			counter && counter.pop();
 			return promise.then(resolve, reject);
 		}
 
-		gutil.log('===> Processing ' + filepath);
+		gutil.log('===> Processing ' + filePath);
 
 		// Add target file to the context to avoid repeats.
-		context[filepath] = true;
+		context[filePath] = true;
 
 		// Start the promise chain.
 		var lastPromise = promise;
 
-		streamer(filepath, {
+		streamer(filePath, {
 
 			line: function(line) {
 				lastPromise = lastPromise.then(function(builder) {
@@ -58,16 +57,16 @@ function scanFile(filepath, promise, context, debug, counter) {
 
 					}
 
-					var importpath = matches[1];
-					if (!paths.extname(importpath)) {
-						importpath += '.less';
+					var importPath = matches[1];
+					if (!paths.extname(importPath)) {
+						importPath += '.less';
 					}
 
-					var fileDir = /^[\/\\]/.test(importpath)
+					var fileDir = /^[\/\\]/.test(importPath)
 							? process.cwd()
-							: paths.dirname(filepath);
+							: paths.dirname(filePath);
 
-					var targetPath = paths.resolve(fileDir, './' + importpath);
+					var targetPath = paths.resolve(fileDir, './' + importPath);
 					return scanFile(targetPath, promise, context, debug, counter);
 
 				});
@@ -92,11 +91,11 @@ function scanFile(filepath, promise, context, debug, counter) {
 }
 
 /**
- * @param {File} filepath The path to the file being scanned.
+ * @param {String} filePath The path to the file being scanned.
  * @param {Boolean} debug Whether to display debug messages during work.
  * @returns {Promise<Buffer>}
  **/
-module.exports = function startScan(filepath, debug) {
-	gutil.log('Starting style precompilation with ' + filepath);
-	return scanFile(filepath, Promise.resolve(new StringBuilder()), {}, debug, debug ? [] : undefined);
+module.exports = function startScan(filePath, debug) {
+	gutil.log('Starting style pre-compilation with ' + filePath);
+	return scanFile(filePath, Promise.resolve(new StringBuilder()), {}, debug, debug ? [] : undefined);
 };

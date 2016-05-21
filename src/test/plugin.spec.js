@@ -35,13 +35,10 @@ describe('The gulp-less-precompiler', function() {
 
 						done();
 
-					}).catch(function(error) {
-						done(error);
-
-					})
+					}).catch(done)
 				})
 
-				.on('error', gutil.log);
+				.on('error', done);
 
 		});
 
