@@ -58,6 +58,9 @@ function scanFile(filepath, promise, context, debug) {
 					importpath += '.less';
 				}
 
+				// Bower doesn't nest dependencies.
+				importpath = importpath.replace(/^.+\/(?=bower_components)/, '/');
+
 				var fileDir = /^[\/\\]/.test(importpath)
 						? process.cwd()
 						: paths.dirname(filepath);
